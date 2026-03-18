@@ -1,0 +1,27 @@
+# Godot 4+ specific ignores
+.godot/
+*.translation
+*.gdignore
+*.uid
+
+# Exported games
+export_presets.cfg
+*.apk
+*.aab
+*.exe
+*.pck
+*.ipa
+*.zip
+*.tar.gz
+
+# Mono-specific ignores
+.mono/
+data_*/
+mono_crash.*.json
+*.csproj.user
+obj/
+bin/
+
+# OS/System ignores
+.DS_Store
+Thumbs.db
