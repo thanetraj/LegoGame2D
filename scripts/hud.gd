@@ -23,6 +23,12 @@ func _setup_ui():
 	var vbox = VBoxContainer.new()
 	margin.add_child(vbox)
 	
+	var level_label = Label.new()
+	level_label.text = "- LEVEL " + str(GameManager.current_level) + " -"
+	level_label.add_theme_font_size_override("font_size", 48)
+	level_label.add_theme_color_override("font_color", Color(1, 0.8, 0.2))
+	vbox.add_child(level_label)
+	
 	quota_label = Label.new()
 	quota_label.text = "Quota: 0 / " + str(GameManager.quota_target)
 	quota_label.add_theme_font_size_override("font_size", 32)

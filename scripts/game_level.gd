@@ -1,13 +1,15 @@
 extends Node2D
 
-const ROOM_SIZE = 500
-const GRID_W = 4
-const GRID_H = 4
+var ROOM_SIZE = 500
+var GRID_W = 4
+var GRID_H = 4
 
 var map_grid = []
 var walls_node: StaticBody2D
 
 func _ready():
+	GRID_W = 3 + GameManager.current_level
+	GRID_H = 3 + GameManager.current_level
 	_setup_level_nodes()
 	_generate_maze()
 	_spawn_entities()
@@ -107,14 +109,16 @@ func _spawn_entities():
 	var enemy_script = load("res://scripts/enemy.gd")
 	var item_script = load("res://scripts/collectible_item.gd")
 	
-	for i in range((GRID_W * GRID_H) / 2):
+	var enemy_count = GameManager.current_level + 2
+	for i in range(enemy_count):
 		if enemy_script:
 			var enemy = enemy_script.new()
 			enemy.position = Vector2(randf_range(ROOM_SIZE, GRID_W * ROOM_SIZE - ROOM_SIZE), randf_range(ROOM_SIZE, GRID_H * ROOM_SIZE - ROOM_SIZE))
 			enemy.name = "Enemy_" + str(i)
 			add_child(enemy)
 			
-	for i in range(15):
+	var item_count = 10 + (GameManager.current_level * 5)
+	for i in range(item_count):
 		if item_script:
 			var item = item_script.new()
 			item.position = Vector2(randf_range(100, GRID_W * ROOM_SIZE - 100), randf_range(100, GRID_H * ROOM_SIZE - 100))
