@@ -15,8 +15,16 @@ func _setup_ui():
 	add_child(vbox)
 	
 	var won = GameManager.quota_current >= GameManager.quota_target
+	var true_win = won and GameManager.current_level >= 5
+	
 	var title = Label.new()
-	title.text = "LEVEL " + str(GameManager.current_level) + " CLEARED!" if won else "DIED IN THE DARK"
+	if true_win:
+		title.text = "YOU ESCAPED!"
+	elif won:
+		title.text = "LEVEL " + str(GameManager.current_level) + " CLEARED!"
+	else:
+		title.text = "DIED IN THE DARK"
+		
 	title.add_theme_font_size_override("font_size", 72)
 	title.add_theme_color_override("font_color", Color.WHITE)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -29,14 +37,18 @@ func _setup_ui():
 	vbox.add_child(stats)
 	
 	var action_btn = Button.new()
-	action_btn.text = "NEXT LEVEL" if won else "RETURN TO MENU"
 	action_btn.add_theme_font_size_override("font_size", 32)
 	action_btn.custom_minimum_size = Vector2(300, 60)
 	action_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	
-	if won:
+	if true_win:
+		action_btn.text = "VICTORY - MAIN MENU"
+		action_btn.pressed.connect(_on_menu_pressed)
+	elif won:
+		action_btn.text = "NEXT LEVEL"
 		action_btn.pressed.connect(GameManager.next_level)
 	else:
+		action_btn.text = "RETURN TO MENU"
 		action_btn.pressed.connect(_on_menu_pressed)
 		
 	vbox.add_child(action_btn)

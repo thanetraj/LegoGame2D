@@ -23,12 +23,15 @@ func start_game():
 	_start_current_level()
 
 func _start_current_level():
-	quota_target = 100 + (current_level * 50)
+	if current_level > 5:
+		current_level = 1
+		
+	quota_target = 100 + ((current_level - 1) * 50)
 	quota_current = 0
 	battery_current = battery_max
 	fear_current = 0.0
 	is_game_active = true
-	get_tree().change_scene_to_file("res://scenes/game_level.tscn")
+	get_tree().call_deferred("change_scene_to_file", "res://scenes/game_level.tscn")
 	
 func next_level():
 	current_level += 1
@@ -41,7 +44,7 @@ func add_quota(amount: int):
 	if quota_current >= quota_target and is_game_active:
 		is_game_active = false
 		level_completed.emit()
-		get_tree().change_scene_to_file("res://scenes/game_over.tscn")
+		get_tree().call_deferred("change_scene_to_file", "res://scenes/game_over.tscn")
 
 func drain_battery(amount: float):
 	battery_current = clamp(battery_current - amount, 0.0, battery_max)
@@ -61,4 +64,4 @@ func recharge_battery(amount: float):
 func trigger_game_over():
 	is_game_active = false
 	game_over.emit()
-	get_tree().change_scene_to_file("res://scenes/game_over.tscn")
+	get_tree().call_deferred("change_scene_to_file", "res://scenes/game_over.tscn")
