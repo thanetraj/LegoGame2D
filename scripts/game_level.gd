@@ -7,12 +7,48 @@ var GRID_H = 4
 var map_grid = []
 var walls_node: StaticBody2D
 
+# --- Room Visibility / Fog of War ---
+var visited_rooms: Dictionary = {}  # Key: Vector2i(room_x, room_y), Value: true
+var player_ref: Node2D = null
+var enemies_list: Array = []
+var items_list: Array = []
+
 func _ready():
 	GRID_W = 3 + GameManager.current_level
 	GRID_H = 3 + GameManager.current_level
 	_setup_level_nodes()
 	_generate_maze()
 	_spawn_entities()
+	# Mark starting room (0,0) as visited
+	visited_rooms[Vector2i(0, 0)] = true
+
+func _process(_delta):
+	if player_ref == null:
+		return
+	# Determine which room the player is currently in
+	var player_room = _get_room_from_position(player_ref.global_position)
+	
+	# Mark current room as visited
+	if not visited_rooms.has(player_room):
+		visited_rooms[player_room] = true
+	
+	# Update visibility of all enemies
+	for enemy in enemies_list:
+		if is_instance_valid(enemy):
+			var enemy_room = _get_room_from_position(enemy.global_position)
+			enemy.visible = visited_rooms.has(enemy_room)
+	
+	# Update visibility of all collectible items
+	for item in items_list:
+		if is_instance_valid(item):
+			var item_room = _get_room_from_position(item.global_position)
+			item.visible = visited_rooms.has(item_room)
+
+# Convert a world position to a room grid coordinate
+func _get_room_from_position(pos: Vector2) -> Vector2i:
+	var rx = clampi(int(pos.x / ROOM_SIZE), 0, GRID_W - 1)
+	var ry = clampi(int(pos.y / ROOM_SIZE), 0, GRID_H - 1)
+	return Vector2i(rx, ry)
 
 func _setup_level_nodes():
 	# Darkness
@@ -100,11 +136,11 @@ func _build_wall(start: Vector2, end: Vector2):
 func _spawn_entities():
 	var player_script = load("res://scripts/player.gd")
 	if player_script:
-		var player = player_script.new()
-		player.position = Vector2(ROOM_SIZE / 2, ROOM_SIZE / 2)
-		player.name = "Player"
-		player.add_to_group("Player")
-		add_child(player)
+		player_ref = player_script.new()
+		player_ref.position = Vector2(ROOM_SIZE / 2, ROOM_SIZE / 2)
+		player_ref.name = "Player"
+		player_ref.add_to_group("Player")
+		add_child(player_ref)
 		
 	var enemy_script = load("res://scripts/enemy.gd")
 	var item_script = load("res://scripts/collectible_item.gd")
@@ -115,11 +151,15 @@ func _spawn_entities():
 			var enemy = enemy_script.new()
 			enemy.position = Vector2(randf_range(ROOM_SIZE, GRID_W * ROOM_SIZE - ROOM_SIZE), randf_range(ROOM_SIZE, GRID_H * ROOM_SIZE - ROOM_SIZE))
 			enemy.name = "Enemy_" + str(i)
+			enemy.visible = false  # Hidden until room is visited
 			add_child(enemy)
+			enemies_list.append(enemy)
 			
 	var item_count = 10 + (GameManager.current_level * 5)
 	for i in range(item_count):
 		if item_script:
 			var item = item_script.new()
 			item.position = Vector2(randf_range(100, GRID_W * ROOM_SIZE - 100), randf_range(100, GRID_H * ROOM_SIZE - 100))
+			item.visible = false  # Hidden until room is visited
 			add_child(item)
+			items_list.append(item)

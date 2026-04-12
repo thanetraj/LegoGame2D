@@ -5,6 +5,8 @@ enum State { PATROL, INVESTIGATE, CHASE, ATTACK }
 const PATROL_SPEED = 30.0
 const CHASE_SPEED = 95.0
 const DETECTION_RADIUS = 200.0
+const ATTACK_DAMAGE = 25.0
+const ATTACK_COOLDOWN = 1.5
 
 var current_state: State = State.PATROL
 var target_pos: Vector2 = Vector2.ZERO
@@ -13,6 +15,7 @@ var time_in_state: float = 0.0
 
 var patrol_timer: float = 0.0
 var chase_timer: float = 0.0
+var attack_cooldown_timer: float = 0.0
 
 @onready var raycast = RayCast2D.new()
 
@@ -61,6 +64,10 @@ func _physics_process(delta):
 		var group = get_tree().get_nodes_in_group("Player")
 		if group.size() > 0:
 			player_ref = group[0]
+	
+	# Tick attack cooldown
+	if attack_cooldown_timer > 0:
+		attack_cooldown_timer -= delta
 			
 	time_in_state += delta
 	queue_redraw()
@@ -72,6 +79,8 @@ func _physics_process(delta):
 			_state_investigate(delta)
 		State.CHASE:
 			_state_chase(delta)
+		State.ATTACK:
+			_state_attack(delta)
 
 func _state_patrol(delta):
 	patrol_timer -= delta
@@ -117,8 +126,28 @@ func _state_chase(delta):
 	if dist_to_player < 150.0:
 		GameManager.add_fear(delta * 20.0 * (150.0 / max(1.0, dist_to_player)))
 		
-	if dist_to_player < 30.0: # Caught
-		GameManager.trigger_game_over()
+	# Attack when close enough (instead of instant game over)
+	if dist_to_player < 30.0 and attack_cooldown_timer <= 0:
+		current_state = State.ATTACK
+		time_in_state = 0.0
+
+func _state_attack(delta):
+	# Deal damage once at start of attack
+	if time_in_state < delta * 2:  # First frame of attack
+		GameManager.damage_player(ATTACK_DAMAGE, "enemy")
+		GameManager.add_fear(15.0)  # Fear burst on hit
+		attack_cooldown_timer = ATTACK_COOLDOWN
+	
+	# Back off after attacking (give player escape chance)
+	if player_ref != null:
+		var away_dir = player_ref.global_position.direction_to(global_position)
+		velocity = away_dir * CHASE_SPEED * 0.8
+		move_and_slide()
+	
+	# After backing off, resume chase
+	if time_in_state > 0.8:
+		current_state = State.CHASE
+		chase_timer = 0.0
 
 func _check_for_player():
 	if player_ref == null:
@@ -134,6 +163,7 @@ func _check_for_player():
 			current_state = State.CHASE
 			chase_timer = 0.0
 			GameManager.add_fear(10.0) # Jump scare burst
+			AudioManager.play_enemy_growl()
 
 func _pick_new_patrol_point():
 	var random_dir = Vector2(randf_range(-1, 1), randf_range(-1, 1)).normalized()
@@ -165,6 +195,13 @@ func _draw():
 		# Alert icon !
 		draw_line(Vector2(0, -30), Vector2(0, -18), Color.RED, 3.0)
 		draw_circle(Vector2(0, -12), 2.0, Color.RED)
+	elif current_state == State.ATTACK:
+		# Attack flash — bright white eyes
+		eye_color = Color(1.0, 1.0, 1.0)
+		eye_offset *= 2.0
+		# Draw attack slash marks
+		draw_line(Vector2(-15, -15), Vector2(15, 15), Color(1, 0.3, 0.3, 0.8), 2.0)
+		draw_line(Vector2(15, -15), Vector2(-15, 15), Color(1, 0.3, 0.3, 0.8), 2.0)
 		
 	draw_circle(eye_offset + Vector2(-5, -4), 3, eye_color)
 	draw_circle(eye_offset + Vector2(5, -4), 3, eye_color)

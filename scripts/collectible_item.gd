@@ -46,6 +46,7 @@ func _process(delta):
 func _on_body_entered(body):
 	if body.name == "Player":
 		GameManager.add_quota(value)
+		AudioManager.play_item_pickup()
 		
 		# Create light burst effect
 		var burst = PointLight2D.new()

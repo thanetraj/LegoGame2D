@@ -11,9 +11,15 @@ var max_stamina: float = 100.0
 var flashlight_on: bool = true
 var is_sprinting: bool = false
 var has_flashlight: PointLight2D = null
+var camera: Camera2D = null
+
+# --- Screen Shake ---
+var shake_intensity: float = 0.0
+var shake_timer: float = 0.0
 
 func _ready():
 	_setup_nodes()
+	GameManager.player_damaged.connect(_on_player_damaged)
 	
 func _setup_nodes():
 	# Procedurally create collision if missing
@@ -27,12 +33,14 @@ func _setup_nodes():
 		
 	# Setup Camera
 	if get_node_or_null("Camera2D") == null:
-		var cam = Camera2D.new()
-		cam.zoom = Vector2(1.5, 1.5)
-		cam.position_smoothing_enabled = true
-		cam.add_child(CanvasLayer.new()) # For vignette later
-		add_child(cam)
-		cam.name = "Camera2D"
+		camera = Camera2D.new()
+		camera.zoom = Vector2(1.5, 1.5)
+		camera.position_smoothing_enabled = true
+		camera.add_child(CanvasLayer.new()) # For vignette later
+		add_child(camera)
+		camera.name = "Camera2D"
+	else:
+		camera = get_node("Camera2D")
 		
 	# Setup Flashlight (PointLight2D with custom gradient texture)
 	has_flashlight = get_node_or_null("Flashlight")
@@ -67,6 +75,7 @@ func _physics_process(delta):
 		
 	_handle_movement(delta)
 	_handle_flashlight(delta)
+	_handle_screen_shake(delta)
 	
 	# Rotate towards mouse
 	var mouse_pos = get_global_mouse_position()
@@ -79,19 +88,29 @@ func _handle_movement(delta):
 	
 	is_sprinting = Input.is_action_pressed("sprint") and current_stamina > 0 and direction != Vector2.ZERO
 	
+	# Fear-based movement penalty: when fear > 50%, player slows down
+	var fear_penalty = 1.0
+	if GameManager.fear_current > 50.0:
+		fear_penalty = remap(GameManager.fear_current, 50.0, 100.0, 1.0, 0.5)
+	
 	if is_sprinting:
 		current_stamina = clamp(current_stamina - STAMINA_DRAIN * delta, 0.0, max_stamina)
-		velocity = direction * SPRINT_SPEED
+		velocity = direction * SPRINT_SPEED * fear_penalty
 	else:
 		current_stamina = clamp(current_stamina + STAMINA_REGEN * delta, 0.0, max_stamina)
-		velocity = direction * SPEED
+		velocity = direction * SPEED * fear_penalty
 		
 	move_and_slide()
+	
+	# Play footstep sounds when moving
+	if direction != Vector2.ZERO:
+		AudioManager.play_footstep(is_sprinting)
 
 func _handle_flashlight(delta):
 	if Input.is_action_just_pressed("switch_light"):
 		flashlight_on = not flashlight_on
 		has_flashlight.enabled = flashlight_on
+		AudioManager.play_flashlight_click()
 		
 	if flashlight_on and GameManager.battery_current > 0:
 		GameManager.drain_battery(BATTERY_DRAIN_RATE * delta)
@@ -100,8 +119,29 @@ func _handle_flashlight(delta):
 		flashlight_on = false
 		has_flashlight.enabled = false
 
+func _handle_screen_shake(delta):
+	if shake_timer > 0:
+		shake_timer -= delta
+		if camera:
+			camera.offset = Vector2(
+				randf_range(-shake_intensity, shake_intensity),
+				randf_range(-shake_intensity, shake_intensity)
+			)
+	elif camera:
+		camera.offset = Vector2.ZERO
+
+func _on_player_damaged(amount):
+	# Trigger screen shake on damage
+	shake_intensity = clamp(amount * 0.5, 3.0, 15.0)
+	shake_timer = 0.3
+	AudioManager.play_damage_hit()
+
 func _draw():
 	# Draw player hazard suit (Orange circle with a backpack)
 	draw_circle(Vector2.ZERO, 12, Color(0.9, 0.4, 0.0))
 	draw_circle(Vector2(5, 0), 8, Color(0.8, 0.8, 0.8)) # Helmet/visor facing forward
 	draw_rect(Rect2(-12, -8, 8, 16), Color(0.3, 0.3, 0.3)) # Backpack
+	
+	# Damage flash — red tint overlay when recently hit
+	if shake_timer > 0:
+		draw_circle(Vector2.ZERO, 14, Color(1, 0, 0, shake_timer * 1.5))

@@ -5,7 +5,7 @@ func _ready():
 
 func _setup_ui():
 	var bg = ColorRect.new()
-	bg.color = Color(0.2, 0.05, 0.05) if GameManager.fear_current >= 100.0 else Color(0.05, 0.2, 0.05)
+	bg.color = Color(0.2, 0.05, 0.05) if GameManager.health_current <= 0.0 else Color(0.05, 0.2, 0.05)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	
@@ -14,7 +14,7 @@ func _setup_ui():
 	vbox.add_theme_constant_override("separation", 40)
 	add_child(vbox)
 	
-	var won = GameManager.quota_current >= GameManager.quota_target
+	var won = GameManager.health_current > 0.0 and GameManager.quota_current >= GameManager.quota_target
 	var true_win = won and GameManager.current_level >= 5
 	
 	var title = Label.new()
@@ -23,7 +23,10 @@ func _setup_ui():
 	elif won:
 		title.text = "LEVEL " + str(GameManager.current_level) + " CLEARED!"
 	else:
-		title.text = "DIED IN THE DARK"
+		if GameManager.death_cause == "fear":
+			title.text = "CONSUMED BY TERROR"
+		else:
+			title.text = "SLAIN IN THE DARK"
 		
 	title.add_theme_font_size_override("font_size", 72)
 	title.add_theme_color_override("font_color", Color.WHITE)
