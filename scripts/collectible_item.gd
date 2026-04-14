@@ -35,6 +35,7 @@ func _setup_nodes():
 	light.texture = tex
 	light.color = Color(1.0, 0.8, 0.2)
 	light.energy = 1.2
+	light.shadow_enabled = true
 	add_child(light)
 
 func _process(delta):

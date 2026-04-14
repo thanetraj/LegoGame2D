@@ -9,10 +9,13 @@ func _setup_ui():
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(bg)
 	
+	var center_container = CenterContainer.new()
+	center_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(center_container)
+	
 	var vbox = VBoxContainer.new()
-	vbox.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	vbox.add_theme_constant_override("separation", 40)
-	add_child(vbox)
+	center_container.add_child(vbox)
 	
 	var won = GameManager.health_current > 0.0 and GameManager.quota_current >= GameManager.quota_target
 	var true_win = won and GameManager.current_level >= 5

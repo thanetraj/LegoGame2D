@@ -195,3 +195,4 @@ func _on_health_updated(percentage):
 func _on_fear_updated(percentage):
 	if fear_overlay and fear_overlay.material:
 		fear_overlay.material.set_shader_parameter("fear_level", percentage)
+

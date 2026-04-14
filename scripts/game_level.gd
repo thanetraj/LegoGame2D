@@ -32,17 +32,28 @@ func _process(_delta):
 	if not visited_rooms.has(player_room):
 		visited_rooms[player_room] = true
 	
-	# Update visibility of all enemies
+	var space_state = get_world_2d().direct_space_state
+	
+	# Update visibility: Must be within distance AND have line-of-sight (no walls in between)
 	for enemy in enemies_list:
 		if is_instance_valid(enemy):
-			var enemy_room = _get_room_from_position(enemy.global_position)
-			enemy.visible = visited_rooms.has(enemy_room)
+			var dist = enemy.global_position.distance_to(player_ref.global_position)
+			var is_vis = false
+			if dist < 900.0:
+				var query = PhysicsRayQueryParameters2D.create(player_ref.global_position, enemy.global_position)
+				query.exclude = [player_ref.get_rid(), enemy.get_rid()]
+				is_vis = space_state.intersect_ray(query).is_empty()
+			enemy.visible = is_vis
 	
-	# Update visibility of all collectible items
 	for item in items_list:
 		if is_instance_valid(item):
-			var item_room = _get_room_from_position(item.global_position)
-			item.visible = visited_rooms.has(item_room)
+			var dist = item.global_position.distance_to(player_ref.global_position)
+			var is_vis = false
+			if dist < 900.0:
+				var query = PhysicsRayQueryParameters2D.create(player_ref.global_position, item.global_position)
+				query.exclude = [player_ref.get_rid(), item.get_rid()]
+				is_vis = space_state.intersect_ray(query).is_empty()
+			item.visible = is_vis
 
 # Convert a world position to a room grid coordinate
 func _get_room_from_position(pos: Vector2) -> Vector2i:

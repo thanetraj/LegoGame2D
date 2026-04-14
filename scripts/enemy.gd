@@ -50,6 +50,7 @@ func _setup_nodes():
 	light.texture = tex
 	light.color = Color.RED
 	light.energy = 0.8
+	light.shadow_enabled = true
 	add_child(light)
 	
 	# Raycast for line of sight
