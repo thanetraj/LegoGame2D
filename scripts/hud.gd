@@ -142,6 +142,14 @@ func _setup_ui():
 	time_label.add_theme_color_override("font_color", Color(0.7, 0.7, 0.7))
 	vbox.add_child(time_label)
 	
+	# Laser weapon indicator (Level 6+)
+	if GameManager.has_laser:
+		var laser_label = Label.new()
+		laser_label.text = "⚡ LASER [V / Right Click]"
+		laser_label.add_theme_font_size_override("font_size", 20)
+		laser_label.add_theme_color_override("font_color", Color(0.3, 0.9, 1.0))
+		vbox.add_child(laser_label)
+	
 	_setup_shaders()
 
 func _setup_shaders():

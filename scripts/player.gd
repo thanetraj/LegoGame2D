@@ -17,6 +17,9 @@ var camera: Camera2D = null
 var shake_intensity: float = 0.0
 var shake_timer: float = 0.0
 
+# --- Laser Weapon ---
+var laser_cooldown_timer: float = 0.0
+
 func _ready():
 	_setup_nodes()
 	GameManager.player_damaged.connect(_on_player_damaged)
@@ -76,6 +79,7 @@ func _physics_process(delta):
 	_handle_movement(delta)
 	_handle_flashlight(delta)
 	_handle_screen_shake(delta)
+	_handle_laser(delta)
 	
 	# Rotate towards mouse
 	var mouse_pos = get_global_mouse_position()
@@ -136,11 +140,39 @@ func _on_player_damaged(amount):
 	shake_timer = 0.3
 	AudioManager.play_damage_hit()
 
+func _handle_laser(delta):
+	laser_cooldown_timer -= delta
+	
+	if not GameManager.has_laser:
+		return
+	
+	if Input.is_action_just_pressed("shoot") and laser_cooldown_timer <= 0:
+		_fire_laser()
+		laser_cooldown_timer = GameManager.laser_cooldown
+
+func _fire_laser():
+	var laser_script = load("res://scripts/player_laser.gd")
+	if laser_script:
+		var laser = laser_script.new()
+		var mouse_pos = get_global_mouse_position()
+		laser.direction = global_position.direction_to(mouse_pos)
+		laser.global_position = global_position + laser.direction * 20.0
+		get_tree().current_scene.add_child(laser)
+		# Slight recoil shake
+		shake_intensity = 3.0
+		shake_timer = 0.1
+
 func _draw():
 	# Draw player hazard suit (Orange circle with a backpack)
 	draw_circle(Vector2.ZERO, 12, Color(0.9, 0.4, 0.0))
 	draw_circle(Vector2(5, 0), 8, Color(0.8, 0.8, 0.8)) # Helmet/visor facing forward
 	draw_rect(Rect2(-12, -8, 8, 16), Color(0.3, 0.3, 0.3)) # Backpack
+	
+	# Draw laser gun indicator when weapon is available
+	if GameManager.has_laser:
+		# Gun barrel
+		draw_rect(Rect2(8, -2, 14, 4), Color(0.2, 0.6, 0.8))
+		draw_circle(Vector2(22, 0), 2, Color(0.3, 0.9, 1.0) if laser_cooldown_timer <= 0 else Color(0.3, 0.3, 0.3))
 	
 	# Damage flash — red tint overlay when recently hit
 	if shake_timer > 0:

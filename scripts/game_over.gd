@@ -18,7 +18,7 @@ func _setup_ui():
 	center_container.add_child(vbox)
 	
 	var won = GameManager.health_current > 0.0 and GameManager.quota_current >= GameManager.quota_target
-	var true_win = won and GameManager.current_level >= 5
+	var true_win = won and GameManager.current_level >= 10
 	
 	var title = Label.new()
 	if true_win:

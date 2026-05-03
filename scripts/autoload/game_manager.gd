@@ -20,6 +20,11 @@ var health_max: float = 100.0
 var health_current: float = 100.0
 var death_cause: String = "unknown"  # "fear", "enemy", "unknown"
 
+# --- Laser Weapon (unlocked Level 6+) ---
+var has_laser: bool = false
+var laser_damage: float = 25.0
+var laser_cooldown: float = 0.5
+
 var is_game_active: bool = false
 
 func _ready():
@@ -38,15 +43,21 @@ func start_game():
 	_start_current_level()
 
 func _start_current_level():
-	if current_level > 5:
+	if current_level > 10:
 		current_level = 1
 		
-	quota_target = 100 + ((current_level - 1) * 50)
+	# Scaling: Levels 1-5 = easy, Levels 6-10 = harder quotas
+	if current_level <= 5:
+		quota_target = 100 + ((current_level - 1) * 50)
+	else:
+		quota_target = 300 + ((current_level - 5) * 75)
+		
 	quota_current = 0
 	battery_current = battery_max
 	fear_current = 0.0
 	health_current = health_max
 	death_cause = "unknown"
+	has_laser = current_level >= 6
 	is_game_active = true
 	get_tree().call_deferred("change_scene_to_file", "res://scenes/game_level.tscn")
 	

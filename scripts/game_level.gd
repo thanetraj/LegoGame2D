@@ -16,6 +16,10 @@ var items_list: Array = []
 func _ready():
 	GRID_W = 3 + GameManager.current_level
 	GRID_H = 3 + GameManager.current_level
+	if GRID_W > 13:
+		GRID_W = 13
+	if GRID_H > 13:
+		GRID_H = 13
 	_setup_level_nodes()
 	_generate_maze()
 	_spawn_entities()
@@ -162,15 +166,28 @@ func _spawn_entities():
 			var enemy = enemy_script.new()
 			enemy.position = Vector2(randf_range(ROOM_SIZE, GRID_W * ROOM_SIZE - ROOM_SIZE), randf_range(ROOM_SIZE, GRID_H * ROOM_SIZE - ROOM_SIZE))
 			enemy.name = "Enemy_" + str(i)
-			enemy.visible = false  # Hidden until room is visited
+			enemy.visible = false
 			add_child(enemy)
 			enemies_list.append(enemy)
-			
+	
+	# Spawn Shooter Enemies from Level 6+
+	if GameManager.current_level >= 6:
+		var shooter_script = load("res://scripts/shooter_enemy.gd")
+		var shooter_count = (GameManager.current_level - 5) + 1  # Level 6=2, Level 7=3, etc.
+		for i in range(shooter_count):
+			if shooter_script:
+				var shooter = shooter_script.new()
+				shooter.position = Vector2(randf_range(ROOM_SIZE * 2, GRID_W * ROOM_SIZE - ROOM_SIZE), randf_range(ROOM_SIZE * 2, GRID_H * ROOM_SIZE - ROOM_SIZE))
+				shooter.name = "ShooterEnemy_" + str(i)
+				shooter.visible = false
+				add_child(shooter)
+				enemies_list.append(shooter)
+				
 	var item_count = 10 + (GameManager.current_level * 5)
 	for i in range(item_count):
 		if item_script:
 			var item = item_script.new()
 			item.position = Vector2(randf_range(100, GRID_W * ROOM_SIZE - 100), randf_range(100, GRID_H * ROOM_SIZE - 100))
-			item.visible = false  # Hidden until room is visited
+			item.visible = false
 			add_child(item)
 			items_list.append(item)
