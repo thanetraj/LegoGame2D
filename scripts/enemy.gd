@@ -24,6 +24,7 @@ var max_health: float = 50.0
 @onready var raycast = RayCast2D.new()
 
 func _ready():
+	add_to_group("Enemy")
 	_setup_nodes()
 	_pick_new_patrol_point()
 
@@ -199,9 +200,9 @@ func take_damage(amount: float):
 		_die()
 
 func _on_bullet_hit(area):
-	if area.get_parent().has_method("hit_enemy"):
+	if area.has_method("hit_enemy"):
 		take_damage(GameManager.laser_damage)
-		area.get_parent().hit_enemy(self)
+		area.hit_enemy(self)
 
 func _die():
 	# Death burst

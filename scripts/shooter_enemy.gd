@@ -200,9 +200,9 @@ func take_damage(amount: float):
 
 func _on_bullet_hit(area):
 	# Check if it's a player bullet
-	if area.get_parent().has_method("hit_enemy"):
+	if area.has_method("hit_enemy"):
 		take_damage(GameManager.laser_damage)
-		area.get_parent().hit_enemy(self)
+		area.hit_enemy(self)
 
 func _die():
 	# Death flash

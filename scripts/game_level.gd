@@ -12,6 +12,7 @@ var visited_rooms: Dictionary = {}  # Key: Vector2i(room_x, room_y), Value: true
 var player_ref: Node2D = null
 var enemies_list: Array = []
 var items_list: Array = []
+var respawn_timer: float = 0.0
 
 func _ready():
 	GRID_W = 3 + GameManager.current_level
@@ -58,6 +59,52 @@ func _process(_delta):
 				query.exclude = [player_ref.get_rid(), item.get_rid()]
 				is_vis = space_state.intersect_ray(query).is_empty()
 			item.visible = is_vis
+			
+	# Handle Respawning
+	respawn_timer += _delta
+	if respawn_timer >= 5.0:
+		respawn_timer = 0.0
+		_check_and_respawn_enemies()
+
+func _check_and_respawn_enemies():
+	# Clean up invalid references
+	enemies_list = enemies_list.filter(func(e): return is_instance_valid(e))
+	
+	var current_enemy_count = 0
+	var current_shooter_count = 0
+	
+	for e in enemies_list:
+		if e.is_in_group("ShooterEnemy"):
+			current_shooter_count += 1
+		elif e.is_in_group("Enemy"):
+			current_enemy_count += 1
+			
+	var expected_enemy_count = GameManager.current_level + 2
+	var expected_shooter_count = 0
+	if GameManager.current_level >= 6:
+		expected_shooter_count = (GameManager.current_level - 5) + 1
+		
+	while current_enemy_count < expected_enemy_count:
+		_spawn_single_enemy(false)
+		current_enemy_count += 1
+		
+	while current_shooter_count < expected_shooter_count:
+		_spawn_single_enemy(true)
+		current_shooter_count += 1
+
+func _spawn_single_enemy(is_shooter: bool):
+	var script_path = "res://scripts/shooter_enemy.gd" if is_shooter else "res://scripts/enemy.gd"
+	var script = load(script_path)
+	if not script: return
+	
+	var enemy = script.new()
+	var spawn_x = randf_range(ROOM_SIZE * 1.5, GRID_W * ROOM_SIZE - ROOM_SIZE * 1.5)
+	var spawn_y = randf_range(ROOM_SIZE * 1.5, GRID_H * ROOM_SIZE - ROOM_SIZE * 1.5)
+	enemy.position = Vector2(spawn_x, spawn_y)
+	enemy.name = ("ShooterEnemy_" if is_shooter else "Enemy_") + str(randi() % 1000)
+	enemy.visible = false
+	add_child(enemy)
+	enemies_list.append(enemy)
 
 # Convert a world position to a room grid coordinate
 func _get_room_from_position(pos: Vector2) -> Vector2i:

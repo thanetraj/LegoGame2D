@@ -168,6 +168,9 @@ func play_enemy_growl():
 func play_damage_hit():
 	_generate_and_play_sfx("hit")
 
+func play_laser_shoot():
+	_generate_and_play_sfx("laser")
+
 func _generate_and_play_sfx(sound_type: String):
 	# Create a temporary player for each SFX so they can overlap
 	var player = AudioStreamPlayer.new()
@@ -189,6 +192,8 @@ func _generate_and_play_sfx(sound_type: String):
 			player.volume_db = -6.0
 		"hit":
 			player.volume_db = -4.0
+		"laser":
+			player.volume_db = -8.0
 	
 	player.play()
 	
@@ -213,6 +218,8 @@ func _generate_and_play_sfx(sound_type: String):
 			samples = _gen_growl()
 		"hit":
 			samples = _gen_hit()
+		"laser":
+			samples = _gen_laser()
 	
 	for s in samples:
 		playback.push_frame(Vector2(s, s))
@@ -294,5 +301,19 @@ func _gen_hit() -> Array:
 		sample += sin(t * 60.0 * TAU) * env * 0.6
 		# Distortion crunch
 		sample += sin(t * 200.0 * TAU) * env * env * env * 0.3
+		samples.append(clamp(sample, -1.0, 1.0))
+	return samples
+
+func _gen_laser() -> Array:
+	var samples = []
+	var duration = 0.2
+	var total = int(duration * SFX_MIX_RATE)
+	for i in range(total):
+		var t = float(i) / SFX_MIX_RATE
+		var env = 1.0 - (t / duration)
+		var freq = lerp(1200.0, 400.0, t / duration)
+		var sample = sin(t * freq * TAU) * env
+		# Add a bit of sawtooth / square bite
+		sample += (fmod(t * freq * 1.5, 1.0) * 2.0 - 1.0) * env * 0.3
 		samples.append(clamp(sample, -1.0, 1.0))
 	return samples

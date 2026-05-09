@@ -33,6 +33,12 @@ func _ready():
 func _process(delta):
 	if not is_game_active:
 		return
+		
+	# Natural fear decay over time (fear reduces when player is safe)
+	if fear_current > 0.0:
+		fear_current = clamp(fear_current - (15.0 * delta), 0.0, 100.0)
+		fear_updated.emit(fear_current / 100.0)
+		
 	# When fear is very high, continuously drain health
 	if fear_current >= 80.0:
 		var drain_rate = remap(fear_current, 80.0, 100.0, 1.0, 8.0)
@@ -51,6 +57,8 @@ func _start_current_level():
 		quota_target = 100 + ((current_level - 1) * 50)
 	else:
 		quota_target = 300 + ((current_level - 5) * 75)
+		if quota_target > 500:
+			quota_target = 500
 		
 	quota_current = 0
 	battery_current = battery_max

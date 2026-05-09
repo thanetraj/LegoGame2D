@@ -39,9 +39,9 @@ func _ready():
 	
 	# Enable monitoring
 	monitoring = true
-	monitorable = false
+	monitorable = true
 	collision_layer = 4  # Bullet layer
-	collision_mask = 2   # Enemy layer
+	collision_mask = 3   # Wall (1) + Enemy (2) layer
 
 func _physics_process(delta):
 	time_alive += delta

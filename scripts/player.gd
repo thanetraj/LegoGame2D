@@ -146,7 +146,7 @@ func _handle_laser(delta):
 	if not GameManager.has_laser:
 		return
 	
-	if Input.is_action_just_pressed("shoot") and laser_cooldown_timer <= 0:
+	if Input.is_action_pressed("shoot") and laser_cooldown_timer <= 0:
 		_fire_laser()
 		laser_cooldown_timer = GameManager.laser_cooldown
 
@@ -158,7 +158,8 @@ func _fire_laser():
 		laser.direction = global_position.direction_to(mouse_pos)
 		laser.global_position = global_position + laser.direction * 20.0
 		get_tree().current_scene.add_child(laser)
-		# Slight recoil shake
+		# Sound and slight recoil shake
+		AudioManager.play_laser_shoot()
 		shake_intensity = 3.0
 		shake_timer = 0.1
 
